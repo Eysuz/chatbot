@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        #chat-container {
+            display: flex;
+            width: 90%;
+            max-width: 900px;
+            height: 90%;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        #chatbox {
+            width: 100%;
+            height: calc(100% - 70px); /* Hamma bo'sh joyni chat uchun ajratamiz */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-left: auto;
+            max-width: 70%;
+        }
+
+        .bot-message {
+            background-color: #28a745;
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-right: auto;
+            max-width: 70%;
+        }
+
+        .message img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .message .text {
+            display: inline-block;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        #input-container {
+            display: flex;
+            width: 100%;
+            background-color: #fff;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            justify-content: space-between;
+            position: relative;
+            gap: 10px;
+        }
+
+        #input-box {
+            width: 80%;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        #send-btn {
+            width: 10%;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #send-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .account-info {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+        }
+
+        .account-info img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .account-info .name {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* Media Queries for Mobile */
+        @media (max-width: 600px) {
+            #chat-container {
+                width: 100%;
+                height: 95%;
+                max-width: none;
+                border-radius: 0;
+                box-shadow: none;
+                gap: 10px;
+            }
+
+            #input-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            #input-box {
+                width: 75%;
+                margin-bottom: 10px;
+            }
+
+            #send-btn {
+                width: 40%;
+                margin-top: 10px;
+            }
+
+            .message .text {
+                font-size: 14px;
+            }
+
+            .user-message, .bot-message {
+                max-width: 80%;
+            }
+        }
+
+        /* Media Queries for Tablets */
+        @media (max-width: 768px) {
+            #input-box {
+                width: 70%;
+            }
+
+            #send-btn {
+                width: 20%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chatbox"></div>
+        <div id="input-container">
+            <div class="account-info">
+                <img src="./user.png" alt="User Avatar">
+                <span class="name">User</span>
+            </div>
+            <input type="text" id="input-box" placeholder="Xabar yozing..." />
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const sendMessageButton = document.getElementById("send-btn");
+        const inputBox = document.getElementById("input-box");
+        const chatbox = document.getElementById("chatbox");
+
+        // Foydalanuvchi xabarini yuborish
+        async function sendMessage() {
+            const userMessage = inputBox.value;
+            if (userMessage.trim() === "") return;
+
+            // Foydalanuvchi xabarini ekranga chiqarish
+            appendMessage(userMessage, "user");
+
+            // FastAPI serveriga so'rov yuborish
+            const response = await fetch('http://127.0.0.1:8000/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message: userMessage })
+            });
+
+            const data = await response.json();
+            const botMessage = data.response;
+
+            // Chatbot javobini ekranga chiqarish
+            appendMessage(botMessage, "bot");
+
+            // Input boxni tozalash
+            inputBox.value = "";
+        }
+
+        // Xabarlarni ekranga chiqarish
+        function appendMessage(message, sender) {
+            const messageElement = document.createElement("div");
+            messageElement.classList.add("message");
+
+            const accountInfo = document.createElement("div");
+            accountInfo.classList.add("account-info");
+
+            const avatar = document.createElement("img");
+            avatar.src = sender === "user" ? "user.png" : "bot-avatar.png";
+            avatar.alt = sender === "user" ? "User Avatar" : "Bot Avatar";
+
+            const name = document.createElement("span");
+            name.classList.add("name");
+            name.textContent = sender === "user" ? "User" : "Chatbot";
+
+            accountInfo.appendChild(avatar);
+            accountInfo.appendChild(name);
+
+            const textElement = document.createElement("div");
+            textElement.classList.add("text");
+            textElement.textContent = message;
+
+            if (sender === "user") {
+                textElement.classList.add("user-message");
+            } else {
+                textElement.classList.add("bot-message");
+            }
+
+            messageElement.appendChild(accountInfo);
+            messageElement.appendChild(textElement);
+
+            chatbox.appendChild(messageElement);
+            chatbox.scrollTop = chatbox.scrollHeight;  // Ekranni oxiriga aylantirish
+        }
+
+        // Yuborish tugmasi bosilganda sendMessage funksiyasini chaqirish
+        sendMessageButton.addEventListener("click", sendMessage);
+
+        // Enter tugmasi bilan xabar yuborish
+        inputBox.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
